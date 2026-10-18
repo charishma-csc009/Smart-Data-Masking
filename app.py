@@ -81,7 +81,6 @@ def init_db():
     """)
 
     # Populate Sample Data if empty
-    # Populate Sample Data if empty
     cursor.execute("SELECT COUNT(*) FROM customers")
     if cursor.fetchone()[0] == 0:
         sample_customers = [
@@ -211,7 +210,6 @@ def mask_email(email, role):
             return f"{masked_name}@{domain}"
         return "***@***.com"
     elif role == "Analyst":
-        # Pseudonymization with stable HMAC/SHA256 hash
         return hashlib.sha256((email + "ANALYST_SALT").encode()).hexdigest()[:16] + "@pseudo.anon"
     return "***@***.com"
 
@@ -258,7 +256,6 @@ def check_role_by_email():
     if row:
         return jsonify({"role": row["role"], "found": True})
     
-    # Auto-detect role fallback based on email pattern
     if "admin" in email:
         return jsonify({"role": "Admin", "found": False})
     elif "analyst" in email:
@@ -271,7 +268,6 @@ def login():
     ip = request.remote_addr
     now = datetime.now()
 
-    # Rate limiting check (5 failed attempts within 15 minutes)
     if ip in failed_login_attempts:
         attempt_data = failed_login_attempts[ip]
         if attempt_data["lockout_until"] and now < attempt_data["lockout_until"]:
@@ -293,7 +289,6 @@ def login():
     user = cursor.fetchone()
 
     if not user or not bcrypt.checkpw(password.encode("utf-8"), user["password_hash"].encode("utf-8")):
-        # Track failed attempt
         if ip not in failed_login_attempts:
             failed_login_attempts[ip] = {"count": 1, "lockout_until": None}
         else:
@@ -314,7 +309,6 @@ def login():
         conn.close()
         return jsonify({"error": "Account is inactive. Contact your Administrator."}), 403
 
-    # Reset rate limiting counter on success
     failed_login_attempts.pop(ip, None)
 
     session.clear()
@@ -533,3 +527,7 @@ def serve(path):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, "index.html")
 
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
